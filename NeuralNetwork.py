@@ -59,12 +59,12 @@ class NeuralNetwork(object):
         return t_func(self.a_out)
 
        
-     #========================End implementation section 1==============================================="   
+    #========================End implementation section 1==============================================="   
         
         
         
         
-     #========================Begin implementation section 2=============================================#    
+    #========================Begin implementation section 2=============================================#    
 
     def backPropagate(self, targets, t_func=sigmoid, d_func=dsigmoid):
         
@@ -86,14 +86,14 @@ class NeuralNetwork(object):
         # calculate error
         return np.square(t_func(self.a_out)-targets).sum()
         
-     #========================End implementation section 2 =================================================="   
+    #========================End implementation section 2 =================================================="   
 
     
     
     
-    def train(self, data,validation_data):
+    def train(self, data, validation_data, t_fnc=sigmoid, d_fnc=dsigmoid):
         start_time = time.time()
-        errors=[]
+        self.errors=[]
         Training_accuracies=[]
       
         for it in range(self.iterations):
@@ -105,30 +105,30 @@ class NeuralNetwork(object):
             for i in range(len(inputs)):
                 Input = inputs[i]
                 Target = targets[i]
-                self.feedForward(Input)
-                error+=self.backPropagate(Target)
-            Training_accuracies.append(self.predict(data))
+                self.feedForward(Input, t_func=t_fnc)
+                error+=self.backPropagate(Target, t_func=t_fnc, d_func=d_fnc)
+            Training_accuracies.append(self.predict(data, t_func=t_fnc))
             
             error=error/len(data)
-            errors.append(error)
+            self.errors.append(error)
             
            
-            print("Iteration: %2d/%2d[==============] -Error: %5.10f  -Training_Accuracy:  %2.2f  -time: %2.2f " %(it+1,self.iterations, error, (self.predict(data)/len(data))*100, time.time() - start_time))
+            print("Iteration: %2d/%2d[==============] -Error: %5.10f  -Training_Accuracy:  %2.2f  -time: %2.2f " %(it+1,self.iterations, error, (self.predict(data, t_func=t_fnc)/len(data))*100, time.time() - start_time))
             # you can add test_accuracy and validation accuracy for visualisation 
             
-        plot_curve(range(1,self.iterations+1),errors, "Error")
+        plot_curve(range(1,self.iterations+1),self.errors, "Error")
         plot_curve(range(1,self.iterations+1), Training_accuracies, "Training_Accuracy")
        
         
      
 
-    def predict(self, test_data):
+    def predict(self, test_data, t_func=sigmoid):
         """ Evaluate performance by counting how many examples in test_data are correctly 
             evaluated. """
         count = 0.0
         for testcase in test_data:
             answer = np.argmax( testcase[1] )
-            prediction = np.argmax( self.feedForward( testcase[0] ) )
+            prediction = np.argmax( self.feedForward( testcase[0], t_func=t_func) )
             count = count + 1 if (answer - prediction) == 0 else count 
             count= count 
         return count 
