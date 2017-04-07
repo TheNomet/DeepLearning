@@ -47,7 +47,7 @@ class NeuralNetwork(object):
         
     #========================Begin implementation section 1============================================="    
     
-    def feedForward(self, inputs):
+    def feedForward(self, inputs, t_func=sigmoid):
         # Compute input activations
         self.a_input = np.array(np.append(inputs,[1]))
 
@@ -55,8 +55,8 @@ class NeuralNetwork(object):
         self.a_hidden = np.append(self.a_input.dot(self.W_input_to_hidden),[1])
 
         # Compute output activations
-        self.a_out = sigmoid(self.a_hidden).dot(self.W_hidden_to_output)
-        return sigmoid(self.a_out)
+        self.a_out = t_func(self.a_hidden).dot(self.W_hidden_to_output)
+        return t_func(self.a_out)
 
        
      #========================End implementation section 1==============================================="   
@@ -66,28 +66,25 @@ class NeuralNetwork(object):
         
      #========================Begin implementation section 2=============================================#    
 
-    def backPropagate(self, targets):
-    
-        u_E_out = (sigmoid(self.a_out)-targets)*(dsigmoid(self.a_out))
-        w_E_out = sigmoid(self.a_hidden).reshape(len(sigmoid(self.a_hidden)),1).dot(u_E_out.reshape(1,len(u_E_out)))
-        # calculate error terms for hidden
-    #     print u_E_out
-        u_E_hidden = self.W_hidden_to_output[:-1,:].dot(u_E_out)*(dsigmoid(self.a_hidden[:-1]))
+    def backPropagate(self, targets, t_func=sigmoid, d_func=dsigmoid):
+        
+        # output gradients
+        u_E_out = (t_func(self.a_out)-targets)*(d_func(self.a_out))
+        w_E_out = t_func(self.a_hidden).reshape(len(t_func(self.a_hidden)),1).dot(u_E_out.reshape(1,len(u_E_out)))
+        
+        # hidden gradients
+        u_E_hidden = self.W_hidden_to_output[:-1,:].dot(u_E_out)*(d_func(self.a_hidden[:-1]))
         u_E_hidden = u_E_hidden.reshape(1,len(u_E_hidden))
-   #     print u_E_hidden.shape
         w_E_hidden = self.a_input.reshape(len(self.a_input),1).dot(u_E_hidden)
-    #    print w_E_hidden.shape
-    #     w_E_hidden = u_E_hidden.dot(my_mnist_net.a_input.reshape(1,len(my_mnist_net.a_input)))
-     #   print self.a_input.shape
-    #     print len(w_E_out)
-      #  print self.W_input_to_hidden.shape
+ 
         # update output weights
         self.W_hidden_to_output = self.W_hidden_to_output - self.learning_rate*w_E_out
+        
         # update input weights
         self.W_input_to_hidden = self.W_input_to_hidden - self.learning_rate*w_E_hidden
-      #  print self.W_input_to_hidden.shape
+
         # calculate error
-        return np.square(sigmoid(self.a_out)-targets).sum()
+        return np.square(t_func(self.a_out)-targets).sum()
         
      #========================End implementation section 2 =================================================="   
 

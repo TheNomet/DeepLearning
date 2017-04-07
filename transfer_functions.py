@@ -22,4 +22,4 @@ def tanh(x):
 # derivative for tanh sigmoid
 
 def dtanh(y):
-    return 1 - y*y
+    return 1 - np.tanh(y)*np.tanh(y)
