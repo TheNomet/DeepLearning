@@ -7,7 +7,7 @@ from transfer_functions import *
 
 class NeuralNetwork(object):
     
-    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, iterations=50, learning_rate = 0.1):
+    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, iterations=50, learning_rate = 0.1, num_hidden_lyrs=1):
         """
         input: number of input neurons
         hidden: number of hidden neurons
