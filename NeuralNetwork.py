@@ -7,7 +7,7 @@ from transfer_functions import *
 
 class NeuralNetwork(object):
     
-    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, iterations=50, learning_rate = 0.1, num_hidden_lyrs=1):
+    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, iterations=50, learning_rate=0.1,hidden_layer1_size=0):
         """
         input: number of input neurons
         hidden: number of hidden neurons
@@ -24,24 +24,28 @@ class NeuralNetwork(object):
         # initialize arrays
         self.input = input_layer_size+1  # +1 for the bias node in the input Layer
         self.hidden = hidden_layer_size+1 #+1 for the bias node in the hidden layer 
+        self.hidden1 = hidden_layer1_size+1 #+1 for the bias node in the hidden layer 
         self.output = output_layer_size
 
         # set up array of 1s for activations
         self.a_input = np.ones(self.input)
         self.a_hidden = np.ones(self.hidden)
+        self.a_hidden1 = np.ones(self.hidden1)
         self.a_out = np.ones(self.output)
+        
         
         
         #create randomized weights Yann Lecun method in 1988's paper ( Default values)
         input_range = 1.0 / self.input ** (1/2)
         self.W_input_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.input, self.hidden-1))
+        self.W_hidden_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.hidden, self.hidden1-1))
         self.W_hidden_to_output = np.random.uniform(size = (self.hidden, self.output)) / np.sqrt(self.hidden)
        
         
-    def weights_initialisation(self,wi,wo):
+    def weights_initialisation(self,wi,wo,wh=np.zeros(0)):
         self.W_input_to_hidden=wi # weights between input and hidden layers
         self.W_hidden_to_output=wo # weights between hidden and output layers
-   
+        self.W_hidden_to_hidden=wh 
 
        
         
@@ -53,9 +57,12 @@ class NeuralNetwork(object):
 
         #Compute  hidden activations=
         self.a_hidden = np.append(self.a_input.dot(self.W_input_to_hidden),[1])
-
-        # Compute output activations
-        self.a_out = t_func(self.a_hidden).dot(self.W_hidden_to_output)
+        if self.hidden1 != 1:
+            self.a_hidden1 = np.append(t_func(self.a_hidden).dot(self.W_hidden_to_hidden),[1])
+            # Compute output activations
+            self.a_out = t_func(self.a_hidden1).dot(self.W_hidden_to_output)
+        else:
+            self.a_out = t_func(self.a_hidden).dot(self.W_hidden_to_output)
         return t_func(self.a_out)
 
        
@@ -67,21 +74,42 @@ class NeuralNetwork(object):
     #========================Begin implementation section 2=============================================#    
 
     def backPropagate(self, targets, t_func=sigmoid, d_func=dsigmoid):
-        
-        # output gradients
-        u_E_out = (t_func(self.a_out)-targets)*(d_func(self.a_out))
-        w_E_out = t_func(self.a_hidden).reshape(len(t_func(self.a_hidden)),1).dot(u_E_out.reshape(1,len(u_E_out)))
-        
-        # hidden gradients
-        u_E_hidden = self.W_hidden_to_output[:-1,:].dot(u_E_out)*(d_func(self.a_hidden[:-1]))
-        u_E_hidden = u_E_hidden.reshape(1,len(u_E_hidden))
-        w_E_hidden = self.a_input.reshape(len(self.a_input),1).dot(u_E_hidden)
- 
-        # update output weights
-        self.W_hidden_to_output = self.W_hidden_to_output - self.learning_rate*w_E_out
-        
-        # update input weights
-        self.W_input_to_hidden = self.W_input_to_hidden - self.learning_rate*w_E_hidden
+        if self.hidden1 != 1:
+            # output gradients
+            u_E_out = (t_func(self.a_out)-targets)*(d_func(self.a_out))
+            w_E_out = t_func(self.a_hidden1).reshape(len(t_func(self.a_hidden1)),1).dot(u_E_out.reshape(1,len(u_E_out)))
+            
+            u_E_hidden1 = self.W_hidden_to_output[:-1,:].dot(u_E_out)*(d_func(self.a_hidden1[:-1]))
+            w_E_hidden1 = t_func(self.a_hidden).reshape(len(self.a_hidden),1).dot(u_E_hidden1.reshape(1,len(u_E_hidden1)))
+            
+            # hidden gradients
+            u_E_hidden = self.W_hidden_to_hidden[:-1,:].dot(u_E_hidden1)*(d_func(self.a_hidden1[:-1]))
+            w_E_hidden = self.a_input.reshape(len(self.a_input),1).dot(u_E_hidden.reshape(1,len(u_E_hidden)))
+
+            # update output weights
+            self.W_hidden_to_output = self.W_hidden_to_output - self.learning_rate*w_E_out
+            
+            # update hidden weights
+            self.W_hidden_to_hidden = self.W_hidden_to_hidden - self.learning_rate*w_E_hidden1
+            
+            # update input weights
+            self.W_input_to_hidden = self.W_input_to_hidden - self.learning_rate*w_E_hidden
+            
+        else:
+            # output gradients
+            u_E_out = (t_func(self.a_out)-targets)*(d_func(self.a_out))
+            w_E_out = t_func(self.a_hidden).reshape(len(t_func(self.a_hidden)),1).dot(u_E_out.reshape(1,len(u_E_out)))
+
+            # hidden gradients
+            u_E_hidden = self.W_hidden_to_output[:-1,:].dot(u_E_out)*(d_func(self.a_hidden[:-1]))
+            u_E_hidden = u_E_hidden.reshape(1,len(u_E_hidden))
+            w_E_hidden = self.a_input.reshape(len(self.a_input),1).dot(u_E_hidden)
+
+            # update output weights
+            self.W_hidden_to_output = self.W_hidden_to_output - self.learning_rate*w_E_out
+
+            # update input weights
+            self.W_input_to_hidden = self.W_input_to_hidden - self.learning_rate*w_E_hidden
 
         # calculate error
         return np.square(t_func(self.a_out)-targets).sum()
